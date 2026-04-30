@@ -1,5 +1,5 @@
 {
-	"geode": "5.5.3",
+	"geode": "5.6.0",
 	"gd": {
 		"win": "2.2081",
 		"android": "2.2081",
@@ -8,10 +8,19 @@
 	},
 	"id": "nwo5.better_volume",
 	"name": "Better Volume",
-	"version": "v2.0.1",
-	"developers": ["Nwo5","lyyako"],
+	"version": "v2.0.2-beta",
+	"developers": [
+		"Nwo5",
+		"lyyako"
+	],
 	"description": "like the alpha mod kinda but cooler :3c",
-	"tags": ["offline", "enhancement", "interface", "utility", "customization"],
+	"tags": [
+		"offline",
+		"enhancement",
+		"interface",
+		"utility",
+		"customization"
+	],
 	"links": {
 		"source": "https://github.com/Nwo5-trg/Better-Volume",
 		"community": "https://discord.gg/AeFeYWGUxZ"
@@ -51,9 +60,16 @@
 			"name": "Mute Button",
 			"default": true
 		},
-		"mute-button-on-right": {
+		"mute-button-right-pause": {
+			"name": "Mute Button on Right (Pause)",
+			"description": "Place the mute button on the right side of the slider in the Pause Menu.",
 			"type": "bool",
-			"name": "Mute Button On Right",
+			"default": false
+		},
+		"mute-button-right-options": {
+			"name": "Mute Button on Right (Options)",
+			"description": "Place the mute button on the right side of the slider in the Options Layer.",
+			"type": "bool",
 			"default": true
 		},
 		"music-text": {
