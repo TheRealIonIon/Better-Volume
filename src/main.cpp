@@ -9,26 +9,32 @@ static std::string getVolumeStr(float pVal) {
     return nwo5::utils::numToString(pVal * 100, Mod::get()->getSettingValue<int>("input-precision"));
 }
 
-// callback cuz i lowkey wanna add volume sliders to editor pause eventually and thisll make it far easier
-static void setupSlider(bool pIsMusic, CCNode* pLayer, geode::CopyableFunction<void(CCObject*)> pCallback, TextInput*& pInputPtr, Slider*& pSliderPtr) {
+static void setupSlider(
+    bool pIsMusic,
+    bool pIsPause,
+    CCNode* pLayer,
+    CopyableFunction<void(CCObject*)> pCallback,
+    TextInput*& pInputPtr,
+    Slider*& pSliderPtr
+) {
     auto slider = typeinfo_cast<Slider*>(pLayer->getChildByIDRecursive(pIsMusic ? "music-slider" : "sfx-slider"));
 
-    if (!slider) {
-        return;
-    }
+    if (!slider) return;
 
     pSliderPtr = slider;
     slider->setZOrder(1);
 
     auto label = typeinfo_cast<CCLabelBMFont*>(pLayer->getChildByIDRecursive(pIsMusic ? "music-label" : "sfx-label"));
 
-    if (!label) {
-        return;
-    }
+    if (!label) return;
 
     label->setVisible(false);
-    
-    auto newLabel = CCLabelBMFont::create(Mod::get()->getSettingValue<std::string>(pIsMusic ? "music-text" : "sfx-text").c_str(), label->getFntFile());
+
+    auto newLabel = CCLabelBMFont::create(
+        Mod::get()->getSettingValue<std::string>(pIsMusic ? "music-text" : "sfx-text").c_str(),
+        label->getFntFile()
+    );
+
     newLabel->setID(pIsMusic ? "music-label"_spr : "sfx-label"_spr);
     newLabel->setScale(label->getScale());
 
@@ -44,11 +50,9 @@ static void setupSlider(bool pIsMusic, CCNode* pLayer, geode::CopyableFunction<v
     pInputPtr->setScale(0.65f);
     pInputPtr->setFilter(".1234567890");
     pInputPtr->setString(getVolumeStr(slider->getValue()));
-    pInputPtr->setCallback([=] (const std::string& pStr) {
-        // prolly not the best solution but it does work :3
-        if (pStr.empty() || pStr.ends_with('.')) {
-            return;
-        }
+
+    pInputPtr->setCallback([=](const std::string& pStr) {
+        if (pStr.empty() || pStr.ends_with('.')) return;
 
         slider->setValue(std::clamp(utils::numFromString<float>(pStr).unwrapOrDefault(), 0.0f, 100.0f) / 100);
         slider->updateBar();
@@ -57,10 +61,7 @@ static void setupSlider(bool pIsMusic, CCNode* pLayer, geode::CopyableFunction<v
     });
 
     auto parent = slider->getParent();
-
-    if (!parent) {
-        return;
-    }
+    if (!parent) return;
 
     auto percentLabel = CCLabelBMFont::create("%", label->getFntFile());
     percentLabel->setScale(label->getScale());
@@ -74,6 +75,7 @@ static void setupSlider(bool pIsMusic, CCNode* pLayer, geode::CopyableFunction<v
     labelMenu->addChild(newLabel);
     labelMenu->addChild(pInputPtr);
     labelMenu->addChild(percentLabel);
+
     labelMenu->setLayout(RowLayout::create()
         ->setAxisAlignment(AxisAlignment::Center)
         ->setAutoGrowAxis(0.0f)
@@ -82,38 +84,34 @@ static void setupSlider(bool pIsMusic, CCNode* pLayer, geode::CopyableFunction<v
         ->setGap(5.0f)
     );
 
-    if (!Mod::get()->getSettingValue<bool>("mute-button")) {
-        return;
-    }
+    if (!Mod::get()->getSettingValue<bool>("mute-button")) return;
 
-    auto muteToggle = CCMenuItemExt::createTogglerWithFrameName("GJ_fxOffBtn_001.png", "GJ_fxOnBtn_001.png", 0.5f, [=] (CCMenuItemToggler* pSender) {
-        const auto muted = !Mod::get()->getSavedValue<bool>(pIsMusic ? "music-muted" : "sfx-muted");
+    auto muteToggle = CCMenuItemExt::createTogglerWithFrameName(
+        pIsMusic ? "GJ_musicOffBtn_001.png" : "GJ_fxOffBtn_001.png",
+        pIsMusic ? "GJ_musicOnBtn_001.png"  : "GJ_fxOnBtn_001.png",
+        0.5f,
+        [=](CCMenuItemToggler* pSender) {
 
-        if (muted) {
-            Mod::get()->setSavedValue<float>(pIsMusic ? "music-volume-ret" : "sfx-volume-ret", slider->getValue());
+            const auto muted = !Mod::get()->getSavedValue<bool>(pIsMusic ? "music-muted" : "sfx-muted");
 
-            slider->setValue(0.0f);
-            slider->updateBar();
+            if (muted) {
+                Mod::get()->setSavedValue<float>(pIsMusic ? "music-volume-ret" : "sfx-volume-ret", slider->getValue());
 
-            pCallback(slider->m_touchLogic->m_thumb);
+                slider->setValue(0.0f);
+                slider->updateBar();
+
+                pCallback(slider->m_touchLogic->m_thumb);
+            } else {
+                slider->setValue(Mod::get()->getSavedValue<float>(pIsMusic ? "music-volume-ret" : "sfx-volume-ret"));
+                slider->updateBar();
+                pCallback(slider->m_touchLogic->m_thumb);
+                pSender->toggle(true);
+            }
+
+            Mod::get()->setSavedValue<bool>(pIsMusic ? "music-muted" : "sfx-muted", muted);
         }
-        else {
-            slider->setValue(
-                Mod::get()->getSavedValue<float>(pIsMusic ? "music-volume-ret" : "sfx-volume-ret")
-            );
-            slider->updateBar();
-            
-            pCallback(slider->m_touchLogic->m_thumb);
+    );
 
-            // ccmenuitemtoggler toggles its sprite after its callback
-            // and cuz callback toggles it to false, we actually need to toggle it true
-            // again so it updates properly :3
-            pSender->toggle(true);
-        }
-
-        // technically triggers twice but shhhh
-        Mod::get()->setSavedValue<bool>(pIsMusic ? "music-muted" : "sfx-muted", muted);
-    });
     muteToggle->setID(pIsMusic ? "music-mute-toggle"_spr : "sfx-mute-toggle"_spr);
     muteToggle->toggle(Mod::get()->getSavedValue<bool>(pIsMusic ? "music-muted" : "sfx-muted"));
     muteToggle->setPosition(CCPointZero);
@@ -124,17 +122,21 @@ static void setupSlider(bool pIsMusic, CCNode* pLayer, geode::CopyableFunction<v
     muteButtonMenu->addChild(muteToggle);
     parent->addChild(muteButtonMenu);
 
-    if (Mod::get()->getSettingValue<bool>("mute-button-on-right")) {
+    bool moveRight = pIsPause
+        ? Mod::get()->getSettingValue<bool>("mute-button-right-pause")
+        : Mod::get()->getSettingValue<bool>("mute-button-right-options");
+
+    if (moveRight) {
         muteButtonMenu->setPosition(
             slider->getPositionX() + ((slider->m_groove->getScaledContentWidth() * slider->getScale()) + 10.0f) / 2,
             slider->getPositionY()
         );
+
         slider->setPosition(
             slider->getPositionX() - (muteButtonMenu->getScaledContentWidth() + 10.0f) / 2,
             slider->getPositionY()
         );
-    }
-    else {
+    } else {
         muteButtonMenu->setPosition(
             labelMenu->getPositionX() + (slider->m_groove->getScaledContentWidth() * slider->getScale()) / 2,
             labelMenu->getPositionY()
@@ -143,123 +145,93 @@ static void setupSlider(bool pIsMusic, CCNode* pLayer, geode::CopyableFunction<v
 }
 
 static void tryUpdateMuteButton(CCLayer* pLayer, bool pIsMusic) {
-    // kinda slow checking every slider tick so i could cache but wtv
-    if (!Mod::get()->getSavedValue<bool>(pIsMusic ? "music-muted" : "sfx-muted")) {
-        return;
-    }
+    if (!Mod::get()->getSavedValue<bool>(pIsMusic ? "music-muted" : "sfx-muted")) return;
 
     auto toggler = typeinfo_cast<CCMenuItemToggler*>(
         pLayer->getChildByIDRecursive(pIsMusic ? "music-mute-toggle"_spr : "sfx-mute-toggle"_spr)
     );
 
-    if (!toggler) {
-        return;
-    }
+    if (!toggler) return;
 
     Mod::get()->setSavedValue<bool>(pIsMusic ? "music-muted" : "sfx-muted", false);
-
     toggler->toggle(false);
 }
 
 class $modify(PauseLayer) {
-    struct Fields { 
-        TextInput* m_musicInput = nullptr; 
-        TextInput* m_sfxInput = nullptr; 
-        Slider* m_musicSlider = nullptr; 
-        Slider* m_sfxSlider = nullptr; 
+    struct Fields {
+        TextInput* m_musicInput = nullptr;
+        TextInput* m_sfxInput = nullptr;
+        Slider* m_musicSlider = nullptr;
+        Slider* m_sfxSlider = nullptr;
     };
 
     void customSetup() {
         PauseLayer::customSetup();
-
         auto fields = m_fields.self();
 
-        setupSlider(
-            true, this, [this] (CCObject* pSender) { musicSliderChanged(pSender); }, 
-            fields->m_musicInput, fields->m_musicSlider
-        );
-        setupSlider(
-            false, this, [this] (CCObject* pSender) { sfxSliderChanged(pSender); }, 
-            fields->m_sfxInput, fields->m_sfxSlider
-        );
+        setupSlider(true, true, this, [this](CCObject* pSender) { musicSliderChanged(pSender); },
+            fields->m_musicInput, fields->m_musicSlider);
+
+        setupSlider(false, true, this, [this](CCObject* pSender) { sfxSliderChanged(pSender); },
+            fields->m_sfxInput, fields->m_sfxSlider);
     }
 
     void musicSliderChanged(CCObject* pSender) {
         PauseLayer::musicSliderChanged(pSender);
-
         auto fields = m_fields.self();
 
         if (fields->m_musicInput && fields->m_musicSlider) {
-            fields->m_musicInput->setString(
-                getVolumeStr(fields->m_musicSlider->getValue())
-            );
-
+            fields->m_musicInput->setString(getVolumeStr(fields->m_musicSlider->getValue()));
             tryUpdateMuteButton(this, true);
         }
     }
 
     void sfxSliderChanged(CCObject* pSender) {
         PauseLayer::sfxSliderChanged(pSender);
-
         auto fields = m_fields.self();
 
         if (fields->m_sfxInput && fields->m_sfxSlider) {
-            fields->m_sfxInput->setString(
-                getVolumeStr(fields->m_sfxSlider->getValue())
-            );
-
+            fields->m_sfxInput->setString(getVolumeStr(fields->m_sfxSlider->getValue()));
             tryUpdateMuteButton(this, false);
         }
     }
 };
 
 class $modify(OptionsLayer) {
-    struct Fields { 
-        TextInput* m_musicInput = nullptr; 
-        TextInput* m_sfxInput = nullptr; 
-        Slider* m_musicSlider = nullptr; 
-        Slider* m_sfxSlider = nullptr; 
+    struct Fields {
+        TextInput* m_musicInput = nullptr;
+        TextInput* m_sfxInput = nullptr;
+        Slider* m_musicSlider = nullptr;
+        Slider* m_sfxSlider = nullptr;
     };
 
     void customSetup() {
         OptionsLayer::customSetup();
-
         auto fields = m_fields.self();
 
-        setupSlider(
-            true, this, [this] (CCObject* pSender) { musicSliderChanged(pSender); }, 
-            fields->m_musicInput, fields->m_musicSlider
-        );
-        setupSlider(
-            false, this, [this] (CCObject* pSender) { sfxSliderChanged(pSender); }, 
-            fields->m_sfxInput, fields->m_sfxSlider
-        );
+        setupSlider(true, false, this, [this](CCObject* pSender) { musicSliderChanged(pSender); },
+            fields->m_musicInput, fields->m_musicSlider);
+
+        setupSlider(false, false, this, [this](CCObject* pSender) { sfxSliderChanged(pSender); },
+            fields->m_sfxInput, fields->m_sfxSlider);
     }
 
     void musicSliderChanged(CCObject* pSender) {
         OptionsLayer::musicSliderChanged(pSender);
-
         auto fields = m_fields.self();
 
         if (fields->m_musicInput && fields->m_musicSlider) {
-            fields->m_musicInput->setString(
-                getVolumeStr(fields->m_musicSlider->getValue())
-            );
-
+            fields->m_musicInput->setString(getVolumeStr(fields->m_musicSlider->getValue()));
             tryUpdateMuteButton(this, true);
         }
     }
 
     void sfxSliderChanged(CCObject* pSender) {
         OptionsLayer::sfxSliderChanged(pSender);
-
         auto fields = m_fields.self();
 
         if (fields->m_sfxInput && fields->m_sfxSlider) {
-            fields->m_sfxInput->setString(
-                getVolumeStr(fields->m_sfxSlider->getValue())
-            );
-
+            fields->m_sfxInput->setString(getVolumeStr(fields->m_sfxSlider->getValue()));
             tryUpdateMuteButton(this, false);
         }
     }
