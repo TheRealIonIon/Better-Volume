@@ -1,9 +1,13 @@
+## v2.0.2-beta
+- **Added** more settings
+- **Fixed** mute button textures
+
 ## v2.0.1
 - **Added** back input precision
 - **Added** better mute button sprites
 
 ## v2.0.0
-- **Added** 2.208 support
+- **Added** 2.2081 support
 - **Added** this whole thing to the main menu options layer too (apparently people change volume outside of levels, who knew)
 - **Added** incompatibility w/ alphas menu mod
 - **Added** node ids
