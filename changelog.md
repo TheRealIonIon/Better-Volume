@@ -1,4 +1,4 @@
-## v2.0.2-beta
+## v2.0.2-beta.1
 - **Added** more settings
 - **Fixed** mute button textures
 
@@ -12,13 +12,10 @@
 - **Added** incompatibility w/ alphas menu mod
 - **Added** node ids
 - **Added** volume muting
-
 - **Fixed** broken ui in platformer mode
-- **Fixed** node ids
 
 ## v1.0.4
 - **Added** customizable music/sfx text for a dumb joke
-
 - **Fixed** after geting bullied in dev chat i finally got to the part in geodes styling guidlines that says global variables bad, i should prolly kms
 - **Fixed** tried to kinda maybe fix the code even tho i def didnt
 - **Fixed** textures
@@ -33,4 +30,4 @@
 - **Added** for mod compatibility sake i made the text input follow the music and sfx label, also scaled them up
 
 ## v1.0.0
-- Initial Release
+- **Initial** release
